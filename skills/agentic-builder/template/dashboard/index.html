@@ -78,6 +78,22 @@
   svg .ms-label{font:10px ui-monospace,monospace;fill:var(--dim);text-transform:uppercase;letter-spacing:1px}
   .node-working rect{animation:nodepulse 1.6s infinite}
   @keyframes nodepulse{0%,100%{opacity:1}50%{opacity:.6}}
+  /* Plan — textual progression (under the flowchart) */
+  .plan-text{margin-top:18px}
+  .plan-text-h{margin:0 0 10px;font-size:13px;color:var(--phase-ink);font-weight:600}
+  .plan-step{border:1px solid var(--line);border-radius:10px;background:var(--panel2);
+    padding:10px 14px;margin:0 0 10px}
+  .plan-step-h{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--node-ink)}
+  .plan-step-h .ms-pct{margin-left:auto;font-size:11px;color:var(--dim);font-weight:400}
+  .plan-step ol{margin:8px 0 0;padding-left:20px}
+  .plan-step li{font-size:12px;color:var(--inset-ink);margin:3px 0;line-height:1.5}
+  .plan-step li .pg{display:inline-block;width:14px}
+  .plan-step li .pr{color:var(--dim);font-size:10.5px;margin-left:6px}
+  .plan-step li.done{opacity:.7}
+  .plan-step li.working{color:var(--node-ink);font-weight:600}
+  .plan-step li.blocked{color:var(--st-blocked)}
+  .plan-text-pre{white-space:pre-wrap;font:12.5px ui-monospace,Menlo,monospace;color:var(--inset-ink);
+    border:1px solid var(--line);border-radius:10px;background:var(--panel2);padding:12px 14px}
   /* Prompt / approval panel */
   #prompt-panel{display:none;position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.55);
     align-items:center;justify-content:center;padding:24px}
@@ -236,8 +252,13 @@
       </div>
       <div class="dag-wrap"><svg id="dag" width="100%" height="600"></svg></div>
       <div class="empty" id="plan-empty">No plan graph yet. It appears once the planner publishes the
-        DAG (Stage 2) — or is derived live from active agents during the build. If you're mid-build and
-        still see this, the dashboard files are an older copy: re-copy template/dashboard/ and restart.</div>
+        overall DAG (Stage 2). If you're mid-build and still see this, the dashboard files are an
+        older copy: re-copy template/dashboard/ and restart.</div>
+      <div id="plan-text" class="plan-text">
+        <h3 class="plan-text-h">Build plan — how the app progresses</h3>
+        <div id="plan-text-body"></div>
+        <div class="empty" id="plan-text-empty">Plan steps appear once the planner publishes the DAG.</div>
+      </div>
     </div>
     <div class="statusbar">
       <div class="top">
@@ -478,6 +499,7 @@ function render(s){
   ).join("") : `<div class="empty" style="padding:20px 0">no events yet</div>`;
 
   renderDAG(s);
+  renderPlanText(s);
   renderPrompt(s);
 }
 
@@ -488,7 +510,7 @@ function setView(v){
   $("grid-view").classList.toggle("hide", plan);
   $("btn-plan").classList.toggle("active", plan);
   $("btn-swarm").classList.toggle("active", !plan);
-  if(plan && LAST) renderDAG(LAST);
+  if(plan && LAST){ renderDAG(LAST); renderPlanText(LAST); }
 }
 $("btn-swarm").addEventListener("click", ()=>setView("swarm"));
 $("btn-plan").addEventListener("click", ()=>setView("plan"));
@@ -502,30 +524,14 @@ function statusColor(st){
 function statusGlyph(st){ return st==="done"?"✓":st==="working"?"⏳":st==="blocked"?"✗":st==="spawning"?"○":""; }
 function isGate(id){ return /^(gate|review|commit)-/.test(id||""); }
 
-// If the orchestrator hasn't published a `dag`, derive one from the live agents so the
-// Plan tab is never empty mid-build. Edges = each task's stage chain (tdd→impl→fix→review).
-function deriveDag(s){
-  const ag=(s.agents||[]).filter(a=>a&&(a.id||a.label)); if(!ag.length) return null;
-  const STAGES=["architect","tdd","impl","fix","review"];
-  const nodes=ag.map(a=>({id:a.id||a.label, role:a.role, label:a.label||a.id,
-    milestone:a.milestone||"", status:a.status||"ready"}));
-  const keyOf=(id,role)=> String(id||"").replace(new RegExp("^"+(role||"")+"-"),"");
-  const byKey={};
-  nodes.forEach(n=>{ const k=keyOf(n.id,n.role); (byKey[k] ||= {})[n.role]=n.id; });
-  const edges=[];
-  Object.values(byKey).forEach(m=>{
-    const present=STAGES.filter(st=>m[st]);
-    for(let i=0;i+1<present.length;i++) edges.push([m[present[i]], m[present[i+1]]]);
-  });
-  return {nodes, edges, milestones:[], derived:true};
-}
+// The Plan tab renders the OVERALL DAG that the planner publishes (s.dag) — the whole-project
+// flow, not a wave/agent-level derivation. Live status is overlaid from matching agents below.
 function renderDAG(s, svgId, emptyId){
   svgId = svgId || "dag";
   emptyId = (emptyId===undefined) ? "plan-empty" : emptyId;
   const svg=$(svgId); if(!svg) return;
-  let dag = s.dag;
-  if(!dag || !Array.isArray(dag.nodes) || !dag.nodes.length){ dag = deriveDag(s); }
-  if(!dag || !dag.nodes || !dag.nodes.length){
+  const dag = s.dag;
+  if(!dag || !Array.isArray(dag.nodes) || !dag.nodes.length){
     svg.innerHTML=""; if(emptyId&&$(emptyId)) $(emptyId).style.display="block"; return false;
   }
   if(emptyId&&$(emptyId)) $(emptyId).style.display="none";
@@ -606,6 +612,68 @@ function renderDAG(s, svgId, emptyId){
   });
   svg.innerHTML=g;
   return true;
+}
+
+// ── Plan tab — textual progression under the flowchart ──────────────────────
+// Mirrors the overall DAG as an ordered, milestone-grouped checklist: how the app
+// gets built, step by step. `s.planText` (string), if present, overrides the derivation.
+function statusWord(st){
+  return st==="done"?"done":st==="working"?"in progress":st==="blocked"?"blocked":
+    st==="spawning"?"starting":"pending";
+}
+function renderPlanText(s){
+  const body=$("plan-text-body"), empty=$("plan-text-empty"); if(!body) return;
+
+  // explicit override: a pre-formatted plan string
+  if(typeof s.planText==="string" && s.planText.trim()){
+    body.innerHTML=`<pre class="plan-text-pre">${esc(s.planText.trim())}</pre>`;
+    if(empty) empty.style.display="none"; return;
+  }
+
+  const dag=s.dag;
+  if(!dag || !Array.isArray(dag.nodes) || !dag.nodes.length){
+    body.innerHTML=""; if(empty) empty.style.display="block"; return;
+  }
+  if(empty) empty.style.display="none";
+
+  // overlay live agent status onto the planned nodes
+  const byAgent={}; (s.agents||[]).forEach(a=>{ if(a.id) byAgent[a.id]=a.status; });
+  const nodes=dag.nodes.map(n=>({...n, status: byAgent[n.id]||n.status||"ready"}));
+  const idIndex={}; nodes.forEach((n,i)=>idIndex[n.id]=i);
+  const edges=(dag.edges||[]).filter(e=>idIndex[e[0]]!=null&&idIndex[e[1]]!=null);
+
+  // longest-path depth → execution order (same layering the flowchart uses)
+  const indeg={}, adj={}; nodes.forEach(n=>{ indeg[n.id]=0; adj[n.id]=[]; });
+  edges.forEach(e=>{ indeg[e[1]]++; adj[e[0]].push(e[1]); });
+  const depth={}; const q=nodes.filter(n=>indeg[n.id]===0).map(n=>n.id); q.forEach(id=>depth[id]=0);
+  const ind={...indeg};
+  while(q.length){ const id=q.shift();
+    adj[id].forEach(t=>{ depth[t]=Math.max(depth[t]??0,(depth[id]??0)+1); if(--ind[t]===0) q.push(t); }); }
+  nodes.forEach(n=>{ if(depth[n.id]==null) depth[n.id]=0; });
+
+  // group by milestone, preserving the planner's milestone order; ungrouped nodes go last
+  const order=(Array.isArray(dag.milestones)?dag.milestones:[]).map(m=>m.id);
+  const labelOf={}; (dag.milestones||[]).forEach(m=>labelOf[m.id]=m.label||m.id);
+  const buckets={}; const seen=[];
+  nodes.forEach(n=>{ const k=n.milestone||"__"; if(!buckets[k]){ buckets[k]=[]; seen.push(k); } buckets[k].push(n); });
+  const keys=[...order.filter(k=>buckets[k]), ...seen.filter(k=>!order.includes(k))];
+
+  body.innerHTML = keys.map((k,i)=>{
+    const mem=buckets[k].slice().sort((a,b)=> (depth[a.id]-depth[b.id]) || idIndex[a.id]-idIndex[b.id]);
+    const work=mem.filter(n=>!isGate(n.id));
+    const doneN=work.filter(n=>n.status==="done").length;
+    const pct=work.length?Math.round(doneN/work.length*100):0;
+    const title = k==="__" ? "Other steps" : esc(labelOf[k]||k);
+    const items = mem.map(n=>{
+      const st=n.status, cls=st==="done"?"done":st==="working"?"working":st==="blocked"?"blocked":"";
+      const role=n.role?` · ${esc(n.role)}`:"";
+      const gate=isGate(n.id)?" (gate)":"";
+      return `<li class="${cls}"><span class="pg">${statusGlyph(st)||"•"}</span>${esc(n.label||n.id)}${role}${gate}<span class="pr">${statusWord(st)}</span></li>`;
+    }).join("");
+    return `<div class="plan-step">
+      <div class="plan-step-h">${i+1}. ${title}<span class="ms-pct">${doneN}/${work.length} · ${pct}%</span></div>
+      <ol>${items}</ol></div>`;
+  }).join("");
 }
 
 // ── prompt / approval panel (reverse channel) ──────────────────────────────

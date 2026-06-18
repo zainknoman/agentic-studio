@@ -42,6 +42,10 @@ The orchestrator rewrites this whole file on each update; the dashboard server s
   `dep_graph` keys AND the matching `agents[].id` so live status overlays automatically; `status` ∈
   `ready|working|done|blocked|spawning`. Gate nodes (`gate-*`/`review-*`/`commit-*`) render as ◇.
   Write it once when the planner finishes the graph; refresh node `status` as the build runs.
+- `planText` (optional, string) — overrides the Plan tab's textual section (rendered under the
+  flowchart). When omitted, the dashboard derives that section from `dag`: milestones in planner
+  order, each an ordered, status-tagged checklist of its nodes with a done/total · % header. Supply a
+  pre-formatted string only when you want custom prose; otherwise leave it out and let it derive.
 - `prompt` (optional) — when present + `answered:false`, the page shows a modal (question + optional
   `plan` text + `options` buttons, or a free-text box if no options). The user's click POSTs to
   `/answer` → `plan/state/answers.json`. The orchestrator blocks on `wait-answer.mjs <id>` AND asks the
