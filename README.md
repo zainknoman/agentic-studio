@@ -3,8 +3,6 @@
 <img width="1280" height="640" alt="og-card" src="https://github.com/user-attachments/assets/de6b8a5f-8320-468a-9ddd-fb5287fc30a1" />
 
 
-<video src="https://github.com/FaisalNoman/agentic-builder/blob/main/agentic-builder_vid.mp4" width="600" controls></video>
-
 
 
 
