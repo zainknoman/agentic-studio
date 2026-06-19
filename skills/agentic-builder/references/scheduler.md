@@ -63,6 +63,15 @@ INIT:
 
 LOOP (until ready_queue empty AND in_flight empty):
 
+  CONTROL (dashboard undo/redo — see SKILL §D):
+    Read plan/state/control.json. For the first request with handled:false:
+      target = milestone M + all its DAG-descendant milestones.
+      Confirm via a `prompt` (list milestones/commits/files) + wait-answer; proceed only on approval.
+      undo → git revert (reverse-topo) the target shas from milestones.json; reset their nodes to
+             ready/pending; drop from done_set. redo → reset target nodes to ready; if notes, append to
+             their agent prompts. Mark request handled:true. (This is safe here — no nodes are in flight
+             at the loop top; never do it mid-wave.)
+
   DISPATCH:
     slots = max_concurrent - len(in_flight)
     Take up to `slots` nodes from ready_queue.

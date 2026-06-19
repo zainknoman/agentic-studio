@@ -206,6 +206,11 @@ The gate is **two deterministic checks, both must pass** (no LLM judgment here):
    `lint:fix` (autofix), re-run `lint`; any errors that remain → route to Phase 7 fix agent (treat like
    a test failure). Skip if no linter is configured. This is mechanical — the linter is the judge.
 2. **Test gate** — run the integration/full test command from TECH-STACK.md.
+   **Publish progress to the dashboard Tests tab:** card the gate + set `tests.status:"running"` in
+   `agents.json` BEFORE running (the board can't update mid-command); after the run, parse the runner
+   output and overwrite the `tests` block — `{status:"done", runner, total, passed, failed, skipped,
+   suites:[{file,total,passed,failed,status,cases?}]}` (schema in SKILL §C.1 / state-schema). Do this on
+   EVERY gate, for ANY runner (vitest/jest/node:test). No Playwright needed for this.
 
 Run the gate scoped to milestone M but executing the FULL suite (cross-milestone regressions must
 surface). `gate-{M}` runs the moment all of M's impl tasks are green — sibling milestones keep running.
@@ -302,6 +307,8 @@ Use the prompt template in `references/code-review-protocol.md` § Stage 2.
 **Orchestrator action (this is the `commit-{M}` node):**
 - `commit` → `git add -A && git commit -m "milestone({M}): {features} complete"` (rolling commit —
   other milestones may still be in flight). Mark M `done` in milestones.json + framework-state.json.
+  **Record the commit sha** (`git rev-parse HEAD`) into that milestone's `commit` field in
+  `milestones.json` — the dashboard milestone **undo** (SKILL §D) reverts these shas.
 - `fix-before-commit` → dispatch surgical fix agents for `critical` + `important` findings only.
   Log `minor` findings in the milestone summary — do not block commit for them.
   After fixes: re-run M's integration gate only (not full review cycle). Then commit.

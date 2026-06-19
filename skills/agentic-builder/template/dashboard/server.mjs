@@ -117,6 +117,54 @@ const server = http.createServer((req, res) => {
       });
       return;
     }
+    // Milestone undo/redo: the page POSTs {action,milestone,notes}; we append to control.json.
+    // The orchestrator reads it at the next scheduler step, confirms, then git-reverts or re-runs.
+    if (req.url === "/control" && req.method === "POST") {
+      let body = "";
+      req.on("data", (c) => { body += c; if (body.length > 1e6) req.destroy(); });
+      req.on("end", () => {
+        try {
+          const inc = JSON.parse(body || "{}"); // { action:"undo"|"redo", milestone, notes }
+          const CTL = path.resolve(here, "..", "state", "control.json");
+          let store = { requests: [] };
+          try { store = JSON.parse(fs.readFileSync(CTL, "utf8")); } catch {}
+          if (!Array.isArray(store.requests)) store.requests = [];
+          if (inc && inc.action && inc.milestone) {
+            store.requests.push({
+              id: `${inc.action}-${inc.milestone}-${store.requests.length + 1}`,
+              action: inc.action, milestone: inc.milestone, notes: inc.notes || "",
+              at: new Date().toISOString(), handled: false,
+            });
+            fs.mkdirSync(path.dirname(CTL), { recursive: true });
+            fs.writeFileSync(CTL, JSON.stringify(store, null, 2));
+          }
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ ok: true }));
+        } catch (e) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ ok: false, error: String(e?.message || e) }));
+        }
+      });
+      return;
+    }
+    // "Open Page" button: open a wireframe/preview URL or local file in the OS default browser.
+    // Reliable for file:// on Windows (cmd /c start) where the page itself can't navigate to file://.
+    if (req.url === "/open" && req.method === "POST") {
+      let body = "";
+      req.on("data", (c) => { body += c; if (body.length > 1e6) req.destroy(); });
+      req.on("end", () => {
+        try {
+          const { url } = JSON.parse(body || "{}");
+          if (url && typeof url === "string") openBrowser(url);
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ ok: !!url }));
+        } catch (e) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ ok: false, error: String(e?.message || e) }));
+        }
+      });
+      return;
+    }
     const buf = fs.readFileSync(HTML);
     res.writeHead(200, { "Content-Type": "text/html" });
     res.end(buf);

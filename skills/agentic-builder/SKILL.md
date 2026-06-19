@@ -126,8 +126,13 @@ skip Step 6 (no foreground/background question — always foreground), launch mi
 **FEATURE shortcut:** skip scaffold note in Step 4, proceed through Steps 2–6 normally,
 then jump to Stage F1 in `references/modes.md` instead of Stage 1.
 
-### Step 2 — Git init
-`git init` if no repo exists. Required for review diffs and commit steps in all modes.
+### Step 2 — Git init + capability check
+Run `git --version`. **If git is NOT installed** (command fails): set `caps.git=false` in `agents.json` +
+framework-state, warn the user once ("git not found — commits, per-milestone checkpoints, and dashboard
+**Undo** are disabled; Redo and the build itself still work"), and run the whole build **without** git
+(skip `commit-{M}` commits, skip worktree, review diffs fall back to comparing files in place). Do NOT
+abort. **If git IS installed:** set `caps.git=true` and `git init` if no repo exists (required for review
+diffs, commit steps, and milestone undo).
 
 ### Step 3 — Dir setup
 Create `plan/docs/` and `plan/state/`. Create `plan/state/cache/` and initialize:
@@ -206,7 +211,9 @@ Right after `plan/docs/` exists, STOP and tell the user:
 > "I created `plan/docs/`. If you already have requirement documents (PRD, feature specs, user
 > stories, etc.), copy them into `plan/docs/` now. Have you added your own requirement files? (Yes / No)"
 
-Use `AskUserQuestion` (Yes / No). Then:
+Ask this via the **dashboard-first ASK protocol (rule 12)** — write the `prompt` (id, question, options
+`["Yes","No"]`) to `agents.json`, block on `node plan/dashboard/wait-answer.mjs <id> 600`, and fall back to
+`AskUserQuestion` ONLY on its non-zero exit. Do not call `AskUserQuestion` directly. Then:
 
 - **Yes →** list `plan/docs/` and check for real files (ignore `.gitkeep`, and ignore `TECH-STACK.md`
   / `ARCHITECTURE.md` which you may generate). Decide by what's actually there:
@@ -222,7 +229,11 @@ Either way you still do Phase C (tech stack), the doc-quality gate, and planning
 
 ### Interview (only when no usable docs were provided)
 
-One phase at a time; reflect a summary back after each. Use `AskUserQuestion` for crisp choices,
+> **Every question in this interview uses the dashboard-first ASK protocol (rule 12)** — for each crisp
+> choice, write a `prompt` to `agents.json`, block on `wait-answer.mjs`, and fall back to `AskUserQuestion`
+> ONLY on timeout/error. Never call `AskUserQuestion` directly while the dashboard is up (foreground runs).
+
+One phase at a time; reflect a summary back after each. Use the ASK protocol for crisp choices,
 open chat for gathering features.
 
 - **Phase A — High-level features.** "What are we building? List the big rocks." Confirm the bullet list.
@@ -233,11 +244,13 @@ open chat for gathering features.
 
 Language/runtime, framework(s), DB, test framework, package manager, target (CLI/web/API/lib),
 constraints. Suggest defaults; record final choices. If the user's provided docs already specify the
-stack, confirm it with them rather than re-asking from scratch.
+stack, confirm it with them rather than re-asking from scratch. Ask via the **dashboard-first ASK protocol
+(rule 12)** (prompt → wait-answer → CLI fallback), not a bare `AskUserQuestion`.
 
 ### Phase D — Design preferences (UI projects ONLY) → `plan/docs/DESIGN-BRIEF.md`
 
-Skip entirely for CLI / library / API-only targets. For UI projects, ask ONE batched `AskUserQuestion`
+Skip entirely for CLI / library / API-only targets. For UI projects, ask ONE batched question via the
+**dashboard-first ASK protocol (rule 12)** (prompt → wait-answer → CLI fallback)
 (every option has a default — never block a non-designer). Capture and write to
 `plan/docs/DESIGN-BRIEF.md` — this is the router's input in Stage 2.4.
 
@@ -303,13 +316,14 @@ There are NO sprint buckets and NO sprint barriers. Instead:
 unmeasurable, or example-free → fix them with the user before building. Then present the plan for
 approval, and make the FLOW visible two ways:
 1. **Write the `dag` object to `agents.json`** (nodes+edges+milestones — schema in "Dashboard
-   interaction"). This renders the live arrow flowchart in BOTH the Plan tab AND the approval modal.
-   Do this every run — it is not optional; without it the modal has no flow diagram.
-2. **`prompt.plan` MUST be the full run-flow as an ASCII diagram with arrows** — the same
-   `scaffold ─► architect ─► [tasks fan out] ─► gate ─► …` view you'd print on the CLI, plus
-   milestones · total tasks · initial ready frontier · max_concurrent. Not a one-line summary.
+   interaction"). This renders the live arrow flowchart in the **Plan tab** (header → Plan). Do this
+   every run — it IS the plan view; the user reviews the flow there. The approval modal does NOT show
+   the flow.
+2. The approval `prompt` is **just the question + options** (no flow in the modal). Phrase the question
+   to point at the Plan tab, e.g. `"Open the Plan tab to review the build flow. Start building?"`.
+   `prompt.plan` is optional and not shown in the modal — put the flow in the `dag` (Plan tab) instead.
 3. Approval is **dashboard-primary** (rule 12): write `prompt {id:"approve-plan", title, question,
-   plan, options:["Approve","Change scope"]}`, then BLOCK on
+   options:["Approve","Change scope"]}`, then BLOCK on
    `node plan/dashboard/wait-answer.mjs approve-plan 600`; only on its timeout/error fall back to
    `AskUserQuestion`. **Get explicit approval before any code.**
 
@@ -564,24 +578,35 @@ The dashboard is now **two-way** and shows the plan as a **live flowchart**, not
 ### A. Live DAG flowchart (the "Plan" tab)
 The board has a **Swarm** view and a **Plan** view (toggle in the header). The Plan view renders the
 whole dependency graph as a status-colored flowchart (zero-dep SVG; nodes grey=ready, amber=working,
-green✓=done, red✗=blocked; milestone gates drawn as ◇ diamonds; milestone clusters as dashed boxes).
+green✓=done, red✗=blocked; milestone gates drawn as ◇ diamonds; milestone clusters as dashed boxes),
+with the **overall plan text shown underneath it — captured once and LOCKED**.
 
-To feed it, **write a `dag` object into `agents.json` once the planner finishes the graph (Stage 2),
-and keep node `status` current** (the page also overlays live status from the `agents[]` array by id):
+**The Plan window is a FIXED, LOCKED flow-chart + locked text — write it ONCE, then only update statuses.**
+1. **Write the COMPLETE `dag` exactly once, at Stage 2**, containing **every node for the whole build**
+   — all `architect-*`, `tdd-*`, `impl-*`, `fix-*`, `review-*`, `gate-*`, `commit-*` nodes across every
+   feature/milestone — plus a `summary` string (the overall plan text shown under the chart). Show the
+   Plan tab when presenting it for approval.
+2. **After that, NEVER add, remove, or rename nodes/edges — not per task, not per gate.** The dashboard
+   LOCKS the structure AND the `summary` text on the first real `dag`, and from then on only **recolors
+   existing nodes in place** (no relayout, no flicker, the text never changes). To show progress, change
+   each node's `status` (or just update `agents[].status` — overlaid by id). Re-publishing a different/
+   partial `dag` per gate is ignored by the page; don't do it.
 ```json
 "dag": {
+  "summary": "3 milestones · 9 features · 24 tasks. Data layer → API → UI. TDD then impl per task; each milestone gates on integration+review before commit.",
   "nodes": [
-    {"id":"architect-data","role":"architect","label":"architect-data","milestone":"data","status":"done"},
-    {"id":"impl-FEAT-001-T1","role":"impl","label":"F1 store","milestone":"data","status":"working"},
+    {"id":"architect-data","role":"architect","label":"architect-data","milestone":"data","status":"ready"},
+    {"id":"tdd-FEAT-001-T1","role":"tdd","label":"F1 tests","milestone":"data","status":"ready"},
+    {"id":"impl-FEAT-001-T1","role":"impl","label":"F1 store","milestone":"data","status":"ready"},
     {"id":"gate-data","role":"review","label":"gate-data","milestone":"data","status":"ready"}
   ],
-  "edges": [["architect-data","impl-FEAT-001-T1"],["impl-FEAT-001-T1","gate-data"]],
+  "edges": [["architect-data","tdd-FEAT-001-T1"],["tdd-FEAT-001-T1","impl-FEAT-001-T1"],["impl-FEAT-001-T1","gate-data"]],
   "milestones": [{"id":"data","label":"Data layer"},{"id":"api","label":"API"}]
 }
 ```
-Node ids should match the scheduler's `dep_graph` keys + the `agents[].id` you already write, so the
-flowchart and the swarm cards stay in sync automatically. This replaces the old ASCII plan dump — show
-the Plan tab when presenting the plan for approval.
+Node ids MUST match the scheduler's `dep_graph` keys + the `agents[].id` you write, so the frozen
+flowchart and the swarm cards stay in sync as statuses flow. This replaces the old ASCII plan dump —
+show the Plan tab when presenting the plan for approval.
 
 ### B. Asking questions / getting approval ON the dashboard (with CLI fallback)
 The page can collect answers and approvals. The flow (use it for the plan-approval gate, wireframe
@@ -592,9 +617,15 @@ approve/reject, and any interview question you want on-screen):
    "prompt": { "id": "approve-plan", "title": "Approve the build plan?",
      "question": "Review the DAG in the Plan tab. Start building?",
      "plan": "<the plan summary text / DAG outline>",
-     "options": ["Approve", "Change scope"], "answered": false }
+     "options": ["Approve", "Change scope"], "openPlan": true, "answered": false }
    ```
    (Omit `options` → the page shows a free-text box. `plan` is optional pre-formatted text.)
+   **Side-action buttons (do NOT submit an answer — open something for review, card stays open):**
+   - `"openPlan": true` → adds an **🗺 Open Plan** button that switches the dashboard to the Plan tab.
+     Use it on the **plan-approval** prompt so the user can review the flow then click Approve/Change.
+   - `"openUrl": "<file-or-http url>"` → adds an **🖼 Open Page** button that opens that URL in the OS
+     default browser (via the server's `/open` route — works for `file://` wireframes on Windows). Use it
+     on the **wireframe-approval** prompt, e.g. `"openUrl": "file:///.../plan/wireframe/index.html"`.
 2. **Block for the dashboard answer FIRST** with the bundled bridge — run as a Bash call (this blocking
    IS your await): `node plan/dashboard/wait-answer.mjs approve-plan 600`
    It prints the chosen value (JSON) on stdout and exits 0 when the user clicks the button; exits 2 on timeout.
@@ -608,6 +639,84 @@ approve/reject, and any interview question you want on-screen):
 
 The server persists clicks to `plan/state/answers.json`; `wait-answer.mjs` polls it. Localhost only.
 SURGICAL/background runs: skip dashboard prompts, use CLI only.
+
+### C. Live test progress (the "Tests" tab) — two sources, one panel
+The dashboard's **Tests** tab shows test progress (status pill + passed/failed/skipped/total counts +
+bar + per-file list). NO Run/Stop/trace/screenshot chrome. It feeds from **two** sources; Playwright
+wins when its server is live, otherwise the unit block renders:
+
+**C.1 — Unit / TDD (the common case: vitest · jest · node:test). MANDATORY at every gate.**
+Most builds (like a TDD utils/data/ui app) have only unit tests. The Tests tab covers them via a `tests`
+block you write into `agents.json` — **no Playwright, no extra server, no deps.** At **each milestone gate
+`gate-{M}`** (and after the suite runs in Phase 6), run the test command, parse its output, and write:
+```json
+"tests": {
+  "status": "running|done", "runner": "vitest",
+  "total": 24, "passed": 23, "failed": 1, "skipped": 0,
+  "suites": [
+    {"file":"src/streak.test.ts","total":6,"passed":6,"failed":0,"status":"passed"},
+    {"file":"src/stats.test.ts","total":5,"passed":4,"failed":1,"status":"failed",
+     "cases":[{"title":"median of evens","status":"failed"}]}
+  ]
+}
+```
+**Write ONE `suites[]` entry PER TEST FILE** — never lump everything into a single suite (that renders as
+"one test detail"). For 24 tools that's ~24 suite rows. `cases` is optional (include failing ones at least).
+Set `status:"running"` + card the gate BEFORE the run (the board can't update mid-command), then overwrite
+with the parsed totals after.
+
+**Multiple gates accumulate.** The dashboard merges `suites[]` by file across every `tests` write, so each
+gate may write just its own milestone's files — prior gates' suites are kept, not clobbered. (If several
+gates fire together, you can also write one combined block listing every file.) Displayed totals are summed
+from the accumulated suites. This updates **once per gate** (one test command = one Bash call) — accurate
+per-milestone counts, not live per-test; live streaming is the C.3 follow-up.
+
+**C.2 — Playwright E2E (only if the project actually has E2E). Auto-hosted.**
+Before the E2E phase, if Playwright E2E exists: (1) no config yet → run **`playwright-setup`** to scaffold
+`playwright.config.*`+specs; (2) config but no `tests/reporters/progress-server.js` → run **`e2e-dashboard`**
+to install the progress-server+reporter; (3) **spawn it in the background** (`node {reporters_dir}/progress-server.js &`)
+BEFORE dispatching the run. Its reporter streams live to the Tests tab. Note the path in `framework-state.json`.
+Skip silently for non-Playwright projects — do NOT run playwright-setup/e2e-dashboard on a unit-only build.
+
+**C.3 — (future) live per-test:** point the runner's JSON reporter at a file the dashboard server tails.
+Not wired yet — C.1 per-gate counts is the current unit path.
+
+Never block the build on test visibility; it is best-effort.
+
+### D. Interactive undo / redo of a milestone (dashboard control channel)
+The user can click a **milestone label in the Plan flowchart** → modal → **Undo from here** or **Re-implement**
+(with optional change notes). The page POSTs `{action,milestone,notes}` to `/control`, which appends to
+`plan/state/control.json` (`{ "requests": [ {id, action, milestone, notes, at, handled:false} ] }`).
+This is **milestone-granular and git-backed** — not per-node. Prereq: record each milestone's commit sha
+(Phase 6 / `commit-{M}` writes `commit` into `milestones.json`).
+
+**Process requests at scheduler-loop boundaries — never mid-wave** (the wave barrier is your safe quiesce
+point; you cannot revert while agents are in flight). At the top of each scheduler iteration, read
+`control.json`; for the first `handled:false` request:
+
+1. **Compute the target set** = the requested milestone **M + all its DAG-descendant milestones** (undoing M
+   alone while keeping dependents would leave them referencing removed code).
+2. **Confirm first (safety).** Write a `prompt` listing exactly what will be reverted (the milestones, their
+   commits, and the files) and block on `wait-answer.mjs`. Proceed only on approval. This is a destructive,
+   git-backed op — always confirm.
+3. **UNDO** → `git revert --no-edit <shas>` for the target set in **reverse-topological order** (descendants
+   first). Prefer `revert` (reversible, audit-trail) over `reset` (history rewrite). On conflict, stop and
+   surface it — do not force. Then set those milestones' nodes back to `ready`/`pending` in scheduler state +
+   `agents.json` (clear done/commit markers), and remove them from `done_set`. Log it.
+4. **REDO / re-implement** → set the target set's nodes back to `ready`; if `notes` is non-empty, append it
+   to those tasks' architect/impl agent prompts ("User change request: {notes}"). Re-enter the scheduler — it
+   re-dispatches the ready frontier normally. (Redo without a prior undo just re-runs from the current code.)
+5. Mark the request `handled:true` in `control.json`; log the outcome to `agents.json`.
+
+Keep it milestone-level. Per-node undo of non-leaf nodes is intentionally NOT supported (incoherent — a
+node's dependents would break). SURGICAL/background runs: ignore the control channel.
+
+**No-git fallback (`caps.git=false`, Step 2):** **Redo works without git** — it just resets nodes to ready
+and re-runs (overwriting files); handle redo requests normally. **Undo requires git** — there are no commits
+to revert. For an undo request when `caps.git=false`, do NOT attempt a revert: respond with a `prompt`
+offering "Run `git init` + commit now (enables undo going forward)" / "Re-implement instead" / "Cancel",
+then mark the request handled. The dashboard already greys out the **Undo** button when `caps.git=false`, so
+this is a backstop.
 
 ## State & resume
 `plan/state/framework-state.json` is the source of truth. Update after: docs, plan, each phase

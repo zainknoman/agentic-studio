@@ -28,7 +28,7 @@ entirely inside your Claude Code session on the subscription you're already logg
 Add this repo as a plugin marketplace, then install:
 
 ```
-/plugin marketplace add <your-github-username>/agentic-builder
+/plugin marketplace add FaisalNoman/agentic-builder
 /plugin install agentic-builder@agentic-builder
 ```
 

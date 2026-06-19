@@ -33,7 +33,16 @@ The orchestrator rewrites this whole file on each update; the dashboard server s
     "id": "approve-plan", "title": "Approve the build plan?",
     "question": "Review the DAG in the Plan tab. Start building?",
     "plan": "<optional pre-formatted plan text>",
-    "options": ["Approve", "Change scope"], "answered": false
+    "options": ["Approve", "Change scope"], "openPlan": true, "answered": false
+  },
+  "tests": {
+    "status": "done", "runner": "vitest",
+    "total": 24, "passed": 23, "failed": 1, "skipped": 0,
+    "suites": [
+      { "file": "src/streak.test.ts", "total": 6, "passed": 6, "failed": 0, "status": "passed" },
+      { "file": "src/stats.test.ts", "total": 5, "passed": 4, "failed": 1, "status": "failed",
+        "cases": [ { "title": "median of evens", "status": "failed" } ] }
+    ]
   }
 }
 ```
@@ -42,14 +51,19 @@ The orchestrator rewrites this whole file on each update; the dashboard server s
   `dep_graph` keys AND the matching `agents[].id` so live status overlays automatically; `status` ∈
   `ready|working|done|blocked|spawning`. Gate nodes (`gate-*`/`review-*`/`commit-*`) render as ◇.
   Write it once when the planner finishes the graph; refresh node `status` as the build runs.
-- `planText` (optional, string) — overrides the Plan tab's textual section (rendered under the
-  flowchart). When omitted, the dashboard derives that section from `dag`: milestones in planner
-  order, each an ordered, status-tagged checklist of its nodes with a done/total · % header. Supply a
-  pre-formatted string only when you want custom prose; otherwise leave it out and let it derive.
 - `prompt` (optional) — when present + `answered:false`, the page shows a modal (question + optional
-  `plan` text + `options` buttons, or a free-text box if no options). The user's click POSTs to
-  `/answer` → `plan/state/answers.json`. The orchestrator blocks on `wait-answer.mjs <id>` AND asks the
-  same via CLI `AskUserQuestion`; first answer wins. Set `answered:true` (or remove `prompt`) to close it.
+  `plan` text + `options` buttons, or a free-text box if no options). `openPlan:true` adds an "Open Plan"
+  side button (switches to the Plan tab, no submit); `openUrl:"<file|http>"` adds an "Open Page" side
+  button (opens that URL in the OS browser via the server `/open` route, no submit). The user's click
+  POSTs to `/answer` → `plan/state/answers.json`. The orchestrator blocks on `wait-answer.mjs <id>` AND
+  asks the same via CLI `AskUserQuestion`; first answer wins. Set `answered:true` to close it.
+- `tests` (optional) — drives the **Tests tab** for unit/TDD runs (any runner). The gate writes
+  `status` (`running|done`), `runner`, `total/passed/failed/skipped`, and `suites[]` (per-file
+  `total/passed/failed/status` + optional failing `cases[]`). Written per milestone gate (Phase 6).
+  Playwright E2E (when its 7373 server is live) takes over the panel instead; otherwise this renders.
+- `caps` (optional) — capability flags from Stage 0, e.g. `{ "git": true|false }`. When `git:false`
+  (git not installed), the dashboard greys out the milestone **Undo** button — undo reverts commits, so it
+  needs git; Redo still works. Set it at Stage 0 Step 2.
 
 - `root` = the project root folder name (shown as a chip in the header). `project` = human title.
 - `startedAt` = run start ISO — the page ticks an elapsed clock from it.
@@ -145,12 +159,23 @@ Array of feature entries — see phases.md Phase 1.
 ## milestones.json  (gate clusters — NOT scheduling buckets)
 ```json
 { "milestones": [
-  { "id": "data", "features": ["FEAT-001"],            "modules": ["data"], "status": "pending" },
-  { "id": "api",  "features": ["FEAT-003","FEAT-004"], "modules": ["api"],  "status": "pending" },
-  { "id": "ui",   "features": ["FEAT-005"],            "modules": ["ui"],   "status": "pending" } ] }
+  { "id": "data", "features": ["FEAT-001"],            "modules": ["data"], "status": "pending", "commit": null },
+  { "id": "api",  "features": ["FEAT-003","FEAT-004"], "modules": ["api"],  "status": "done",    "commit": "a1b2c3d" },
+  { "id": "ui",   "features": ["FEAT-005"],            "modules": ["ui"],   "status": "pending", "commit": null } ] }
 ```
 A milestone only adds `gate-{id}`/`review-{id}`/`commit-{id}` nodes to the DAG; it imposes NO ordering
-between milestones beyond the real dependency edges the planner drew.
+between milestones beyond the real dependency edges the planner drew. `commit` = the sha written by
+`commit-{M}` (Phase 6) — the dashboard milestone **undo** (SKILL §D) git-reverts these.
+
+## control.json  (dashboard → orchestrator: milestone undo/redo — written by server `/control`)
+```json
+{ "requests": [
+  { "id": "undo-ui-1", "action": "undo", "milestone": "ui", "notes": "", "at": "<iso>", "handled": false },
+  { "id": "redo-api-2", "action": "redo", "milestone": "api", "notes": "use a Map not an array", "at": "<iso>", "handled": false } ] }
+```
+The scheduler reads this at each loop top (see SKILL §D + scheduler.md CONTROL step): for the first
+`handled:false` request it confirms, then git-reverts (undo) or resets-to-ready + re-runs (redo) the
+milestone **and its DAG-descendant milestones**, and sets `handled:true`. Milestone-granular only.
 
 ## tasks/{FEAT}-tasks.json
 Task + subtask decomposition (incl. `module` + `milestone` fields) — see phases.md Phase 2.
