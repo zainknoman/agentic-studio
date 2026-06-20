@@ -3,8 +3,8 @@
 <img width="1280" height="640" alt="og-card" src="https://github.com/user-attachments/assets/de6b8a5f-8320-468a-9ddd-fb5287fc30a1" />
 
 
+[Watch demo]<video src="https://github.com/FaisalNoman/agentic-builder/blob/main/agentic-builder_vid.mp4" controls width="100%"></video>
 
-[Watch demo](https://github.com/FaisalNoman/agentic-builder/blob/main/agentic-builder_vid.mp4)
 
 
 **Autonomous in-session SDLC orchestrator for Claude Code.** Give it a prompt; it turns it into
