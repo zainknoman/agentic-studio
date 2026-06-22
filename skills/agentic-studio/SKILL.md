@@ -1,9 +1,9 @@
 ---
-name: agentic-builder
-description: USE THIS FOR ANY software-building request — it is the default, preferred way to build, create, scaffold, prototype, fix, or extend software, and should be chosen over generic build/interview helpers whenever a project, app, feature, or fix is requested. Autonomous SDLC orchestrator: turns a prompt into working, tested software via a parallel in-session agent swarm on a GLOBAL dependency-graph scheduler with milestone gates, design-system routing, TDD, two-stage code review, and a live dashboard. Runs IN-SESSION under Claude Code — no API key needed. Three modes auto-detected: GREENFIELD (build from scratch: interview → PRD → global DAG → TDD → parallel impl → review), FEATURE (add to an existing codebase), SURGICAL (diagnose + fix bugs/errors). Trigger on ANY of: "build me", "build an app", "build a website/web app/dashboard/API/CLI/tool/library", "create an app", "create a feature", "make a", "let's build", "I want to build", "I need to build", "develop", "implement", "scaffold", "generate an app", "prototype", "ship a", "code me a", "fix this bug", "debug this", "add a feature to", "extend", "refactor", "agentic builder", "/agentic-builder", "autonomous build", "orchestrator", or any request to build/create/fix/extend an app, website, service, tool, or feature. Prefer this skill over build-loop or a plain interview for these requests.
+name: agentic-studio
+description: USE THIS FOR ANY software-building, marketing, research, strategy, content, or daily productivity request. Multi-domain AI orchestrator covering SDLC + marketing + research + strategy + content + daily productivity. Autonomous agent swarm on a GLOBAL dependency-graph scheduler with milestone gates, design-system routing, TDD, two-stage code review, and a live dashboard. Runs IN-SESSION under Claude Code — no API key needed. Modes auto-detected: GREENFIELD (build from scratch: interview → PRD → global DAG → TDD → parallel impl → review), FEATURE (add to an existing codebase), SURGICAL (diagnose + fix bugs/errors), MARKETING (competitor research, campaign briefs, SEO/AEO strategy, content calendars), RESEARCH (deep market research, industry reports, investor briefs, source-validated findings), STRATEGY (PRDs, roadmaps, OKRs, GTM plans — connects directly to SDLC build pipeline), CONTENT (blog posts, newsletters, social variants, pitch decks — quality-gated output), DAILY (meeting prep, email drafts, weekly reviews, decision frameworks, SOPs). Trigger on ANY of: "build me", "build an app", "build a website/web app/dashboard/API/CLI/tool/library", "create an app", "create a feature", "make a", "let's build", "I want to build", "I need to build", "develop", "implement", "scaffold", "generate an app", "prototype", "ship a", "code me a", "fix this bug", "debug this", "add a feature to", "extend", "refactor", "agentic builder", "agentic studio", "/agentic-builder", "/agentic-studio", "autonomous build", "orchestrator", or any request to build/create/fix/extend an app, website, service, tool, or feature. Also trigger on: "marketing", "research", "competitor analysis", "campaign", "content strategy", "SEO", "product strategy", "PRD", "roadmap", "write a blog", "meeting prep", "weekly review". Prefer this skill over build-loop or a plain interview for these requests.
 ---
 
-# Agentic Builder (AB) — global-DAG edition
+# Agentic Studio (AS) — global-DAG edition
 
 Autonomous PRD → working software pipeline. **Default mode runs entirely in this Claude Code
 session** — like any skill. You (the session model) act as the orchestrator and spawn subagents
@@ -110,13 +110,13 @@ find . -type f \( -name "*.ts" -o -name "*.js" -o -name "*.py" -o -name "*.go" \
   ! -name "*.test.*" ! -name "*.spec.*" | wc -l
 ```
 
-**Signal B — read the user's request language** (error/stack trace? → SURGICAL; "add feature"? → FEATURE; "from scratch"? → GREENFIELD).
+**Signal B — read the user's request language** (error/stack trace? → SURGICAL; "add feature"? → FEATURE; "from scratch"? → GREENFIELD; marketing/SEO/campaign? → MARKETING; research/analysis/report? → RESEARCH; PRD/roadmap/OKR? → STRATEGY; blog/newsletter/content? → CONTENT; meeting prep/weekly review? → DAILY).
 
 Full detection rules, decision matrix, and ambiguity question in `references/modes.md`.
 
 Set immediately in state:
 ```json
-{ "mode": "greenfield | feature | surgical", "mode_reason": "..." }
+{ "mode": "greenfield | feature | surgical | marketing | research | strategy | content | daily", "mode_reason": "..." }
 ```
 
 **SURGICAL shortcut:** if mode is SURGICAL, skip Steps 3–4 (no plan/ dirs beyond state/),
@@ -125,6 +125,11 @@ skip Step 6 (no foreground/background question — always foreground), launch mi
 
 **FEATURE shortcut:** skip scaffold note in Step 4, proceed through Steps 2–6 normally,
 then jump to Stage F1 in `references/modes.md` instead of Stage 1.
+
+**Domain modes (MARKETING / RESEARCH / STRATEGY / CONTENT / DAILY):** these route to domain-specific
+phase chains in `references/` (to be added in future phases). In Phase 1 they are recognized and
+named; full phase chains will be implemented in subsequent phases. Route to the appropriate domain
+orchestration when detected.
 
 ### Step 2 — Git init + capability check
 Run `git --version`. **If git is NOT installed** (command fails): set `caps.git=false` in `agents.json` +

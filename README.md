@@ -1,21 +1,31 @@
-# agentic-builder
+# Agentic Studio
 
 <img width="1280" height="640" alt="og-card" src="https://github.com/user-attachments/assets/de6b8a5f-8320-468a-9ddd-fb5287fc30a1" />
 
+**Multi-domain AI orchestrator for Claude Code.** Turns natural language into autonomous agent swarm
+workflows across six domains — no API key, no separate program. Runs entirely inside your Claude Code
+session on the subscription you're already logged into.
 
-https://github.com/user-attachments/assets/21f1a509-97ba-4af7-82f1-bc1f840367a1
+| Domain | What it does |
+|---|---|
+| 🔨 **Software (SDLC)** | Greenfield builds, feature additions, bug fixes — full autonomous dev pipeline |
+| 📊 **Marketing** | Competitor research, campaign briefs, SEO/AEO strategy, content calendars |
+| 🔍 **Research** | Deep market research, industry reports, investor briefs, source-validated findings |
+| 🎯 **Strategy** | PRDs, roadmaps, OKRs, GTM plans — connects directly to SDLC build pipeline |
+| ✍️ **Content** | Blog posts, newsletters, social variants, pitch decks — quality-gated output |
+| 📅 **Daily** | Meeting prep, email drafts, weekly reviews, decision frameworks, SOPs |
 
-**Autonomous in-session SDLC orchestrator for Claude Code.** Give it a prompt; it turns it into
-tested, working software using a parallel agent swarm — no API key, no separate program. It runs
-entirely inside your Claude Code session on the subscription you're already logged into.
+Evolved from `agentic-builder` — all existing SDLC functionality is preserved.
 
-## What it does
+---
+
+## What it does (SDLC mode)
 
 - **Global dependency-graph scheduler** — every task whose dependencies are met runs at once (up to a
   concurrency cap), across the whole project. No sprint barriers; "milestones" are gate/review/commit
   nodes that block only their own cluster, so the agent fleet stays saturated.
-- **Three auto-detected modes** — GREENFIELD (build from scratch), FEATURE (add to an existing
-  codebase), SURGICAL (diagnose + fix a bug).
+- **Eight auto-detected modes** — GREENFIELD (build from scratch), FEATURE (add to an existing
+  codebase), SURGICAL (diagnose + fix a bug), MARKETING, RESEARCH, STRATEGY, CONTENT, DAILY.
 - **Design-system routing** — for UI projects it interviews for product/industry/aesthetic, routes to
   the best installed design skill (prefers `ui-ux-pro-max`), writes a token contract, and validates a
   wireframe with you before any code.
@@ -33,8 +43,8 @@ entirely inside your Claude Code session on the subscription you're already logg
 Add this repo as a plugin marketplace, then install:
 
 ```
-/plugin marketplace add FaisalNoman/agentic-builder
-/plugin install agentic-builder@agentic-builder
+/plugin marketplace add zainknoman/agentic-studio
+/plugin install agentic-studio@agentic-studio
 ```
 
 (Or point `/plugin marketplace add` at the repo's Git URL.) Requires Node.js on PATH (used by the
@@ -52,7 +62,7 @@ Build a small habit-tracker web app with a localStorage store, a stats bar, and 
 Or invoke it explicitly any time:
 
 ```
-/agentic-builder Build me a URL-shortener API with tests.
+/agentic-studio Build me a URL-shortener API with tests.
 ```
 
 It will interview you (only as needed), show a plan for approval on the dashboard, then build —
@@ -61,13 +71,17 @@ opening the live dashboard automatically so you can watch the swarm.
 ## What's in the box
 
 ```
-.claude-plugin/plugin.json        plugin manifest
-.claude-plugin/marketplace.json   marketplace entry (single-plugin repo)
-hooks/hooks.json                  UserPromptSubmit hook registration
-hooks/route.mjs                   nudges build/fix prompts to this skill
-skills/agentic-builder/SKILL.md   the orchestrator
-skills/agentic-builder/references/  phase prompts, scheduler, schemas, protocols
-skills/agentic-builder/template/dashboard/  the live dashboard (server + page + answer bridge)
+skills/agentic-studio/plugin.json           plugin manifest
+hooks/hooks.json                            UserPromptSubmit hook registration
+hooks/route.mjs                             routes build/fix/domain prompts to this skill
+skills/agentic-studio/SKILL.md             the orchestrator (8 modes)
+skills/agentic-studio/references/          phase prompts, scheduler, schemas, protocols
+skills/agentic-studio/references/marketing/  MARKETING mode phase files (Phase 2)
+skills/agentic-studio/references/research/   RESEARCH mode phase files (Phase 3)
+skills/agentic-studio/references/strategy/   STRATEGY mode phase files (Phase 4)
+skills/agentic-studio/references/content/    CONTENT mode phase files (Phase 5)
+skills/agentic-studio/references/daily/      DAILY mode phase files (Phase 6)
+skills/agentic-studio/template/dashboard/  the live dashboard (server + page + answer bridge)
 ```
 
 ## Notes
