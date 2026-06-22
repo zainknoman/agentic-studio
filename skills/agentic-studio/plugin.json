@@ -1,8 +1,8 @@
 {
   "name": "agentic-studio",
-  "version": "0.1.0",
-  "description": "Multi-domain AI orchestrator — autonomous agent swarm for software development, marketing research, business strategy, content creation, deep research, and daily productivity. Extends agentic-builder with domain-specific phase chains.",
-  "tags": ["orchestrator", "sdlc", "marketing", "research", "strategy", "content", "daily", "multi-agent", "autonomous"],
+  "version": "1.0.0",
+  "description": "Multi-domain AI orchestrator — autonomous agent swarm for software development (GREENFIELD/FEATURE/SURGICAL), marketing research, business strategy, content creation, deep research, and daily productivity. Global dependency-graph scheduler, TDD, two-stage code review, live dashboard, no API key.",
+  "tags": ["orchestrator", "sdlc", "marketing", "research", "strategy", "content", "daily", "multi-agent", "autonomous", "tdd", "dashboard", "greenfield", "feature", "surgical"],
   "author": "zainknoman",
   "skill": "skills/agentic-studio/SKILL.md"
 }

@@ -277,7 +277,7 @@ aside.panel{display:flex;flex-direction:column;min-height:0}
   <header>
     <div class="brand">
       <div class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.4"/><circle cx="5" cy="19" r="2.4"/><circle cx="19" cy="19" r="2.4"/><path d="M12 7.4v4.6M10.4 13.2 6.6 16.8M13.6 13.2l3.8 3.6"/></svg></div>
-      <div class="txt"><h1>Agentic Builder — Agent Swarm</h1><div class="sub" id="proj"></div></div>
+      <div class="txt"><h1>Agentic Studio — Agent Swarm</h1><div class="sub" id="proj"></div></div>
     </div>
     <div class="pills" aria-label="run status">
       <span class="pill root"><span class="k">root</span><span class="mono" id="root">—</span></span>
@@ -368,7 +368,7 @@ aside.panel{display:flex;flex-direction:column;min-height:0}
     </aside>
   </div>
 
-  <div class="note">Agentic Builder · live swarm dashboard · OLED dark + glass · Inter + JetBrains Mono</div>
+  <div class="note">Agentic Studio v1.0.0 · live swarm dashboard · OLED dark + glass · Inter + JetBrains Mono</div>
 </div>
 
 <div id="prompt-panel"><div class="modal-card">
@@ -439,7 +439,7 @@ function render(s){
   $("proj").textContent = s.project ? "· "+s.project : "";
   $("root").textContent = s.root || (s.project||"project");
   $("phase").textContent = s.phase || "idle";
-  $("mode").textContent = (s.mode==="background"?"background":"foreground");
+  $("mode").textContent = (s.strategy&&s.strategy.name) ? s.strategy.name : (s.mode==="background"?"background":"foreground");
   // orchestrator strip
   const strat=s.strategy, reason=s.reasoning;
   if(strat||reason){ $("orch").style.display="flex";

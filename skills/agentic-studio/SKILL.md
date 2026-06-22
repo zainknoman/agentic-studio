@@ -25,7 +25,7 @@ epic = feature · story = task · subtask = implementation unit.
 
 ## Operating rules (read first)
 
-1. **Mode-first.** Before any other step, detect operating mode (GREENFIELD / FEATURE / SURGICAL) per `references/modes.md`. The mode controls which stages run. Never skip mode detection. In GREENFIELD, never skip the interview — a vague PRD → a vague build. In FEATURE, never skip the feature spec (`FEATURE-SPEC.md`). In SURGICAL, never skip reproduction confirmation.
+1. **Mode-first.** Before any other step, detect operating mode per `references/modes.md`. Eight modes: **GREENFIELD** (build from scratch) · **FEATURE** (add to existing codebase) · **SURGICAL** (diagnose + fix bugs) · **MARKETING** (competitor research, SEO/AEO, campaigns) · **RESEARCH** (deep investigation, reports, investor briefs) · **STRATEGY** (PRDs, roadmaps, OKRs, GTM plans) · **CONTENT** (quality-gated writing: blogs, newsletters, pitch decks) · **DAILY** (meeting prep, email drafts, weekly reviews, SOPs). The mode controls which phase chain runs. Never skip mode detection. In GREENFIELD, never skip the interview. In FEATURE, never skip the feature spec (`FEATURE-SPEC.md`). In SURGICAL, never skip reproduction confirmation. Domain modes (MARKETING through DAILY) skip SDLC stages and route to their own phase chains in `references/{mode}/`.
 2. **Gate on doc quality** before building (Stage 2): every feature's acceptance criteria must be
    specific + testable. If they're vague, push back and tighten them with the user first.
 3. **Persist state** to `plan/state/framework-state.json` after every phase. On re-run, read it,

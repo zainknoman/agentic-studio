@@ -81,16 +81,16 @@ Update dashboard to show "Marketing Research" as the session type label.
 ```
 
 ### Checklist
-- [ ] Add MARKETING intent detection to `hooks/route.mjs`
-- [ ] Create `references/marketing/` folder structure
-- [ ] Write `phase-discover.md` — clarification prompts for brand/product/goal
-- [ ] Write `phase-research.md` — competitor agent spawn instructions
-- [ ] Write `competitor-agent-prompt.md` — per-agent research instructions
-- [ ] Write `phase-synthesise.md` — merge and dedup instructions for orchestrator
-- [ ] Write `phase-brief.md` — output selection logic
-- [ ] Write `phase-review.md` — quality gate scoring rubric
-- [ ] Create output templates: competitive matrix, campaign brief, content calendar
-- [ ] Update dashboard session type label for MARKETING
+- [x] Add MARKETING intent detection to `hooks/route.mjs` — already present (verified)
+- [x] Create `references/marketing/` folder structure
+- [x] Write `phase-discover.md` — clarification prompts for brand/product/goal
+- [x] Write `phase-research.md` — competitor agent spawn instructions (max 5 parallel)
+- [x] Write `competitor-agent-prompt.md` — per-agent research instructions with error handling
+- [x] Write `phase-synthesise.md` — merge and dedup instructions for orchestrator
+- [x] Write `phase-brief.md` — output selection logic (5 deliverables, goal-adaptive)
+- [x] Write `phase-review.md` — quality gate scoring rubric (10 dimensions, threshold 80/100)
+- [x] Create output templates: competitive matrix, campaign brief, content calendar
+- [x] Update dashboard session type label for MARKETING — `strategy.name = "Marketing Research"` documented in `modes.md`
 - [ ] Test: run MARKETING mode with a real product and 3 competitors
 - [ ] Quality gate: competitive matrix should have ≥5 dimensions per competitor
 
@@ -131,16 +131,17 @@ Update hooks/route.mjs for RESEARCH intent.
 ```
 
 ### Checklist
-- [ ] Add RESEARCH intent detection to `hooks/route.mjs`
-- [ ] Create `references/research/` folder structure
-- [ ] Write `phase-scope.md` — depth selector, format selector, time horizon
-- [ ] Write `phase-gather.md` — sub-topic decomposition logic; parallel agent spawn
-- [ ] Write `web-agent-prompt.md` — per-agent web search instructions
-- [ ] Write `phase-validate.md` — source quality rubric; contradiction detection
-- [ ] Write `source-quality-rubric.md` — scoring matrix (primary source=10, blog=2 etc.)
-- [ ] Write `phase-synthesise.md` — merge protocol for orchestrator
-- [ ] Write `phase-output.md` — depth-conditional output selection
-- [ ] Create output templates: exec summary, structured report, decision brief
+- [x] Add RESEARCH intent detection to `hooks/route.mjs` — already present (verified)
+- [x] Create `references/research/` folder structure
+- [x] Write `phase-scope.md` — depth selector, format selector, time horizon
+- [x] Write `phase-gather.md` — sub-topic decomposition logic; parallel agent spawn (max 6)
+- [x] Write `web-agent-prompt.md` — per-agent web search instructions with angle-specific guidance
+- [x] Write `phase-validate.md` — source quality rubric; contradiction detection and resolution
+- [x] Write `source-quality-rubric.md` — 5-tier scoring (primary=5, blog=2, unreliable=1)
+- [x] Write `phase-synthesise.md` — merge protocol; cross-angle insights; knowledge-base.json schema
+- [x] Write `phase-output.md` — depth-conditional output (surface/standard/deep) with quality gate
+- [x] Create output templates: exec summary (≤500 words), structured report (sectioned), decision brief (≤800 words)
+- [x] Update `references/modes.md` — RESEARCH mode description, signal B, decision matrix, phase chain, dashboard label
 - [ ] Test: run RESEARCH mode on a real market question (e.g. "SaaS pricing in Pakistan 2026")
 - [ ] Quality gate: output must include ≥3 cited sources per major claim
 
@@ -190,14 +191,15 @@ Test the full loop: idea → PRD → GREENFIELD build.
 ```
 
 ### Checklist
-- [ ] Add STRATEGY intent detection to `hooks/route.mjs`
-- [ ] Create `references/strategy/` folder structure
-- [ ] Write `phase-ideate.md` — structured extraction from free-form idea
-- [ ] Write `phase-validate.md` — lightweight market check; risk flags
-- [ ] Write `phase-define.md` — PRD, RICE, roadmap, OKR generation
-- [ ] Write `phase-gtm.md` — GTM plan generation
-- [ ] Write `phase-handoff.md` — GREENFIELD input formatter
-- [ ] Create output templates: PRD, RICE scoring table, roadmap, OKR set, GTM plan
+- [x] Add STRATEGY intent detection to `hooks/route.mjs` — signal patterns added to route.mjs + modes.md
+- [x] Create `references/strategy/` folder structure
+- [x] Write `phase-ideate.md` — structured extraction from free-form idea (4 questions, strategy-idea.json)
+- [x] Write `phase-validate.md` — lightweight market check; viability green/amber/red; risk flags
+- [x] Write `phase-define.md` — PRD + RICE + roadmap + OKR generation (4 artifacts)
+- [x] Write `phase-gtm.md` — GTM plan: ICP, positioning statement, channel mix, pricing model
+- [x] Write `phase-handoff.md` — GREENFIELD-HANDOFF.md generator; closes strategy→dev loop
+- [x] Create output templates: PRD, RICE scoring table, roadmap, OKR set, GTM plan
+- [x] Update `references/modes.md` — STRATEGY mode description, signal B, decision matrix, phase chain, dashboard label
 - [ ] Wire HANDOFF output to GREENFIELD mode trigger in `hooks/route.mjs`
 - [ ] Test full loop: free-form idea → STRATEGY mode → auto-trigger GREENFIELD mode
 - [ ] Quality gate: PRD must include Problem, Users, Goals, Non-goals, Requirements, Success metrics
@@ -247,16 +249,17 @@ New files to create:
 ```
 
 ### Checklist
-- [ ] Add CONTENT intent detection to `hooks/route.mjs`
-- [ ] Create `references/content/` folder structure
-- [ ] Write `phase-brief.md` — content type selector and brief extraction
-- [ ] Write `phase-outline.md` — parallel research/SEO/competitor agents
-- [ ] Write `phase-draft.md` — full draft assembly instructions
-- [ ] Write `phase-critique.md` — 4-dimension scoring rubric
-- [ ] Write `quality-rubric.md` — detailed scoring criteria per dimension
-- [ ] Write `phase-refine.md` — critique-to-revision loop instructions
-- [ ] Write `phase-publish-ready.md` — final output assembly
-- [ ] Create output templates: blog post, social variants, email campaign
+- [x] Add CONTENT intent detection to `hooks/route.mjs` — signal patterns added to route.mjs + modes.md
+- [x] Create `references/content/` folder structure
+- [x] Write `phase-brief.md` — content type selector (7 types) and brief extraction (7 questions)
+- [x] Write `phase-outline.md` — 3 parallel agents: research + SEO + competitor; merged outline.json
+- [x] Write `phase-draft.md` — full draft assembly; key messages, stats, tone, SEO rules
+- [x] Write `phase-critique.md` — 4-dimension scoring (clarity/originality/SEO/audience fit); threshold 75
+- [x] Write `quality-rubric.md` — breakpoints per dimension; hard-block rule (no dimension < 40)
+- [x] Write `phase-refine.md` — critique-to-revision loop; max 3 iterations; BLOCKED fallback
+- [x] Write `phase-publish-ready.md` — final md + social variants (3x tweet/LinkedIn/newsletter snippet)
+- [x] Create output templates: blog post, social variants, email campaign
+- [x] Update `references/modes.md` — CONTENT mode description, signal B, decision matrix, phase chain, dashboard label
 - [ ] Test: write a 1000-word blog post on a technical topic; verify critique loop fires when score < 75
 - [ ] Quality gate: final output score must be >= 75 across all 4 dimensions
 
@@ -299,15 +302,16 @@ Note: DAILY mode should be fast. Target < 60 seconds per task. Fewer agents, les
 ```
 
 ### Checklist
-- [ ] Add DAILY intent detection to `hooks/route.mjs` (5 sub-mode patterns)
-- [ ] Create `references/daily/` folder structure
-- [ ] Write `phase-parse.md` — sub-mode classifier
-- [ ] Write `sub-modes/meeting-prep.md` — attendee research + agenda agent pair
-- [ ] Write `sub-modes/email.md` — triage + draft agent pair
-- [ ] Write `sub-modes/review.md` — OKR check-in template agent
-- [ ] Write `sub-modes/decision.md` — decision matrix agent
-- [ ] Write `sub-modes/sop.md` — procedure extraction agent
-- [ ] Create output templates: agenda, decision matrix, weekly review, SOP
+- [x] Add DAILY intent detection to `hooks/route.mjs` — signal patterns added to route.mjs + modes.md
+- [x] Create `references/daily/` folder structure
+- [x] Write `phase-parse.md` — sub-mode classifier (5 modes, keyword triggers, daily-parse.json)
+- [x] Write `sub-modes/meeting-prep.md` — 2 parallel agents: context-agent + agenda-agent
+- [x] Write `sub-modes/email.md` — DRAFT (1 agent, 3 variants) / TRIAGE (orchestrator direct)
+- [x] Write `sub-modes/review.md` — OKR check-in; orchestrator direct; weekly-review.md template
+- [x] Write `sub-modes/decision.md` — decision matrix; orchestrator direct; pros/cons + recommendation
+- [x] Write `sub-modes/sop.md` — procedure extraction; orchestrator direct; RACI + numbered steps
+- [x] Create output templates: agenda, decision matrix, weekly review, SOP
+- [x] Update `references/modes.md` — DAILY mode description, signal B, decision matrix, phase chain, dashboard label
 - [ ] Test: prep for a real meeting; verify output in < 60 seconds
 - [ ] Test: write a decision framework for a real decision
 
@@ -337,12 +341,12 @@ Tasks:
 ```
 
 ### Checklist
-- [ ] Audit `route.mjs` for intent overlap; add confidence threshold + clarification prompt
-- [ ] Update dashboard mode label and agent role labels
-- [ ] Update dashboard phase progress indicator
-- [ ] Complete `README.md` with all 6 modes documented
-- [ ] Final `SKILL.md` update with all domain triggers
-- [ ] Final `plugin.json` — version bump to 1.0.0
+- [x] Audit `route.mjs` for intent overlap; add priority order comment + overlap resolution
+- [x] Update dashboard mode label (shows `strategy.name` when available) and fix "Agentic Builder" → "Agentic Studio" in header/footer
+- [x] Dashboard agent role labels already present (domain icons + CSS role vars for all 8 modes)
+- [x] Complete `README.md` — quick-start for each mode, text architecture diagram, contributing guide
+- [x] Final `SKILL.md` — rule 1 updated to list all 8 modes with descriptions
+- [x] Final `plugin.json` — version 1.0.0 in both `.claude-plugin/plugin.json` and `skills/agentic-studio/plugin.json`; multi-domain descriptions; expanded keywords
 - [ ] Smoke test SDLC mode (existing)
 - [ ] Smoke test MARKETING mode
 - [ ] Smoke test RESEARCH mode

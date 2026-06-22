@@ -1,7 +1,7 @@
 {
   "name": "agentic-studio",
-  "version": "0.3.0",
-  "description": "Autonomous in-session SDLC orchestrator: a prompt becomes tested, working software via a parallel agent swarm on a global dependency-graph scheduler — with design-system routing, TDD, two-stage code review, and a live dark/light dashboard (locked plan flowchart, interactive approvals, per-gate test progress, milestone undo/redo). Runs under Claude Code with no API key.",
+  "version": "1.0.0",
+  "description": "Multi-domain AI orchestrator for Claude Code. Turns natural language into autonomous agent swarm workflows across six domains — no API key, no separate program. Runs entirely inside your Claude Code session. SDLC: autonomous builds (GREENFIELD / FEATURE / SURGICAL), global dependency-graph scheduler, design-system routing, TDD, two-stage code review, live dashboard. Marketing: competitor research, SEO/AEO, campaign briefs, content calendars. Research: deep market analysis, industry reports, investor briefs, source-validated findings. Strategy: PRDs, roadmaps, OKRs, GTM plans (connects to SDLC pipeline). Content: quality-gated blogs, newsletters, social variants, pitch decks. Daily: meeting prep, email drafts, weekly reviews, decision frameworks, SOPs.",
   "author": { "name": "Zain Kamali" },
   "license": "MIT",
   "keywords": [
@@ -14,7 +14,17 @@
     "tdd",
     "dependency-graph",
     "dashboard",
-    "code-review"
+    "code-review",
+    "marketing",
+    "research",
+    "strategy",
+    "content",
+    "daily",
+    "multi-domain",
+    "multi-agent",
+    "greenfield",
+    "feature",
+    "surgical"
   ],
   "hooks": "./hooks/hooks.json"
 }

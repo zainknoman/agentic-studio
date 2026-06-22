@@ -5,7 +5,7 @@ The orchestrator reads it once, sets `framework-state.mode`, then never re-reads
 
 ---
 
-## The Three Modes
+## Operating Modes
 
 ### GREENFIELD
 User is starting a new project from scratch.
@@ -20,6 +20,52 @@ Runs: repo survey → scoped planning → architect (interfaces for new feature 
 User wants to fix a bug, resolve an error, or make a targeted change to one area.
 Skips: interview, PRD, scaffold, architect, TDD setup.
 Runs: repo survey → systematic debugging → targeted fix agent(s) → two-stage review → commit.
+
+### MARKETING
+User wants competitive research, a campaign brief, positioning, content strategy, SEO/AEO clusters,
+or any marketing intelligence output.
+Skips: PRD, scaffold, architect, TDD, DAG build loop.
+Runs: DISCOVER interview → parallel RESEARCH agents (up to 5 competitors simultaneously) →
+SYNTHESISE (orchestrator merges) → BRIEF (5 deliverables) → REVIEW quality gate (≥ 80/100).
+Phase reference: `references/marketing/` (phase-discover.md → phase-research.md →
+phase-synthesise.md → phase-brief.md → phase-review.md).
+
+### RESEARCH
+User wants a deep-dive investigation, industry report, market analysis, investor brief,
+or any evidence-based knowledge synthesis from public sources.
+Skips: PRD, scaffold, architect, TDD, DAG build loop.
+Runs: SCOPE interview → parallel GATHER agents (up to 6 simultaneous, one per angle) →
+VALIDATE (cross-reference, score sources) → SYNTHESISE (build knowledge base) →
+OUTPUT (surface / standard / deep deliverable).
+Phase reference: `references/research/` (phase-scope.md → phase-gather.md →
+phase-validate.md → phase-synthesise.md → phase-output.md).
+
+### STRATEGY
+User wants to produce product strategy artifacts: PRD, feature prioritisation, roadmap, OKRs,
+or a go-to-market plan — and optionally hand off to GREENFIELD for implementation.
+Skips: PRD (generates its own), scaffold, architect, TDD, DAG build loop.
+Runs: IDEATE interview → VALIDATE (market check, viability) → DEFINE (PRD + RICE + roadmap + OKRs) →
+GTM (positioning, channels, pricing) → HANDOFF (generate GREENFIELD-ready brief).
+Phase reference: `references/strategy/` (phase-ideate.md → phase-validate.md → phase-define.md →
+phase-gtm.md → phase-handoff.md).
+
+### CONTENT
+User wants to produce a polished written artifact: blog post, newsletter, LinkedIn post, landing page
+copy, email campaign, pitch deck, case study, whitepaper, or press release — with quality-gated
+critique and revision loop.
+Skips: PRD, scaffold, architect, TDD, DAG build loop.
+Runs: BRIEF interview → parallel OUTLINE agents (research + SEO + competitor) → DRAFT →
+CRITIQUE (4-dimension scoring, threshold 75) → REFINE loop (max 3 iterations) → PUBLISH-READY.
+Phase reference: `references/content/` (phase-brief.md → phase-outline.md → phase-draft.md →
+phase-critique.md → phase-refine.md → phase-publish-ready.md).
+
+### DAILY
+User wants a fast knowledge-worker productivity output: meeting prep, email draft, weekly review,
+decision framework, or standard operating procedure. Target: < 60 seconds per task.
+Skips: everything except parse → execute → deliver. Max 2 agents.
+Runs: PARSE (classify sub-mode) → EXECUTE (sub-mode handler) → DELIVER (copy-paste-ready output).
+Sub-modes: MEETING_PREP · EMAIL · REVIEW · DECISION · SOP.
+Phase reference: `references/daily/` (phase-parse.md → sub-modes/{sub-mode}.md).
 
 ---
 
@@ -54,6 +100,36 @@ GREENFIELD signals:
 - "from scratch", "new project", "start a", "build me an app", "create a"
 - Empty or near-empty directory
 
+MARKETING signals (any one is enough):
+- "marketing", "competitor", "SEO", "campaign", "brand strategy", "GTM", "go-to-market"
+- "audience", "content strategy", "market research", "positioning", "social media"
+- "ad copy", "conversion", "funnel", "AEO", "GEO", "AI citations"
+- "competitive analysis", "competitor research", "campaign brief", "keyword clusters"
+
+RESEARCH signals (any one is enough):
+- "research", "analyse", "analysis", "investigate", "deep dive", "literature review"
+- "industry report", "investor brief", "find information about", "trends in"
+- "what is the market for", "size of the market", "market sizing"
+- "due diligence", "landscape report", "state of the market", "evidence on"
+
+STRATEGY signals (any one is enough):
+- "product strategy", "PRD", "product requirements", "roadmap", "OKR", "north star metric"
+- "go-to-market", "GTM", "pricing strategy", "stakeholder brief", "business case"
+- "prioritise features", "RICE", "MoSCoW", "feature prioritisation", "product vision"
+- "now next later", "product roadmap", "define the product", "what should we build"
+
+CONTENT signals (any one is enough):
+- "write a blog", "write an article", "newsletter", "LinkedIn post", "Twitter thread"
+- "landing page copy", "email campaign", "pitch deck", "case study", "whitepaper"
+- "press release", "product announcement", "content brief", "write me a"
+- "draft a post", "help me write", "blog post about", "article about"
+
+DAILY signals (any one is enough):
+- "meeting prep", "prepare for", "draft email", "triage my email", "follow-up email"
+- "weekly review", "OKR check-in", "decision framework", "pros and cons", "should I"
+- "SOP", "standard operating procedure", "agenda for", "talking points", "action items"
+- "summarise this", "help me decide", "week in review", "retrospective"
+
 ### Signal C — Explicit user override
 User says "use surgical mode", "just fix this", "full build", "add feature" → trust them exactly.
 
@@ -64,6 +140,11 @@ User says "use surgical mode", "just fix this", "full build", "add feature" → 
 | GREENFIELD | any | GREENFIELD |
 | BROWNFIELD | SURGICAL signals | SURGICAL |
 | BROWNFIELD | FEATURE signals | FEATURE |
+| any | MARKETING signals | MARKETING (directory state irrelevant) |
+| any | RESEARCH signals | RESEARCH (directory state irrelevant) |
+| any | STRATEGY signals | STRATEGY (directory state irrelevant) |
+| any | CONTENT signals | CONTENT (directory state irrelevant) |
+| any | DAILY signals | DAILY (directory state irrelevant) |
 | BROWNFIELD | ambiguous | ask one question (see below) |
 | GREENFIELD | SURGICAL/FEATURE signals | ask — user may be in wrong dir |
 
@@ -81,6 +162,155 @@ Map A→SURGICAL, B→FEATURE, C→GREENFIELD. Do not ask follow-up questions �
 ---
 
 ## Per-mode Phase Gates
+
+### MARKETING — competitive research + brief pipeline
+
+```
+Stage 0:  mode detection → dashboard launch (no worktree, no scaffold)
+Stage M1: DISCOVER — dashboard-first interview (brand, product, audience, goal, competitors)
+          Output: plan/state/marketing-brief.json
+Stage M2: RESEARCH — parallel competitor agents (max 5 simultaneous)
+          Each agent: positioning, pricing, messaging, 1-star reviews, feature gaps, SEO keywords
+          Output: plan/state/research-{slug}.json (one per competitor)
+Stage M3: SYNTHESISE — orchestrator merges all profiles → competitive matrix
+          Output: plan/state/competitive-matrix.json + plan/docs/competitive-matrix.md
+Stage M4: BRIEF — generate 5 deliverables (sequential, orchestrator-direct)
+          Outputs: competitive-analysis.md, positioning.md, campaign-brief.md,
+                   content-calendar.md, keyword-clusters.md  (all in plan/docs/)
+Stage M5: REVIEW — quality gate: completeness score ≥ 80/100; flag + regenerate if below
+          Output: plan/state/brief-review.json
+```
+
+**Reference files:** Load in order as each stage starts:
+`references/marketing/phase-discover.md` → `phase-research.md` → `phase-synthesise.md`
+→ `phase-brief.md` → `phase-review.md`
+Competitor subagent prompt: `references/marketing/competitor-agent-prompt.md`
+Output templates: `references/marketing/output-templates/`
+
+**Skipped entirely:** PRD, FEATURES.txt, ARCHITECTURE.md, scaffold, worktree, architect,
+TDD, global DAG, milestone gates, code review, git commits.
+
+**Dashboard cards:** discover · competitor-{slug} (N cards) · synthesise · brief · review
+
+---
+
+### RESEARCH — evidence-based investigation pipeline
+
+```
+Stage 0:   mode detection → dashboard launch (no worktree, no scaffold)
+Stage R1:  SCOPE — dashboard-first interview (question, depth, angles, time horizon, audience)
+           Output: plan/state/research-scope.json
+Stage R2:  GATHER — parallel angle agents (max 6 simultaneous)
+           Each agent: one angle (market / competitor / regulatory / technology / sentiment / financial)
+           Output: plan/state/gather-{angle}.json (one per agent)
+Stage R3:  VALIDATE — orchestrator cross-references sources, scores quality, resolves contradictions
+           Output: plan/state/validation-report.json
+Stage R4:  SYNTHESISE — orchestrator merges all angles into structured knowledge base
+           Output: plan/state/knowledge-base.json
+Stage R5:  OUTPUT — generate deliverables based on depth setting:
+           surface  → plan/docs/research-exec-summary.md
+           standard → plan/docs/research-report.md
+           deep     → plan/docs/research-report.md + plan/docs/research-decision-brief.md
+```
+
+**Reference files:** Load in order as each stage starts:
+`references/research/phase-scope.md` → `phase-gather.md` → `phase-validate.md`
+→ `phase-synthesise.md` → `phase-output.md`
+Web agent prompt: `references/research/web-agent-prompt.md`
+Source scoring: `references/research/source-quality-rubric.md`
+Output templates: `references/research/output-templates/`
+
+**Skipped entirely:** PRD, FEATURES.txt, ARCHITECTURE.md, scaffold, worktree, architect,
+TDD, global DAG, milestone gates, code review, git commits.
+
+**Dashboard cards:** scope · gather-{angle} (N cards) · validate · synthesise · output
+
+---
+
+### STRATEGY — product strategy pipeline
+
+```
+Stage 0:   mode detection → dashboard launch (no worktree, no scaffold)
+Stage SI1: IDEATE — dashboard-first interview (idea, problem, target user, success metric)
+           Output: plan/state/strategy-idea.json
+Stage SI2: VALIDATE — market check (analogous products, timing, risks, viability)
+           Output: plan/state/strategy-validation.json
+           Gate: if viability=red, prompt user to proceed/adjust/pivot
+Stage SI3: DEFINE — generate 4 artifacts (PRD + RICE features + roadmap + OKRs)
+           Outputs: plan/docs/strategy-prd.md, strategy-features.md,
+                    strategy-roadmap.md, strategy-okrs.md
+Stage SI4: GTM — go-to-market plan (ICP, positioning, channels, pricing)
+           Output: plan/docs/strategy-gtm.md
+Stage SI5: HANDOFF — convert artifacts into GREENFIELD-ready brief
+           Output: plan/docs/GREENFIELD-HANDOFF.md
+```
+
+**Reference files:** Load in order:
+`references/strategy/phase-ideate.md` → `phase-validate.md` → `phase-define.md`
+→ `phase-gtm.md` → `phase-handoff.md`
+Output templates: `references/strategy/output-templates/`
+
+**Skipped entirely:** scaffold, worktree, architect, TDD, global DAG, milestone gates, code review, git commits.
+
+**Dashboard cards:** ideate · validate · define · gtm · handoff
+
+---
+
+### CONTENT — quality-gated content production pipeline
+
+```
+Stage 0:   mode detection → dashboard launch (no worktree, no scaffold)
+Stage SC1: BRIEF — dashboard-first interview (type, audience, goal, tone, word count, messages, SEO)
+           Output: plan/state/content-brief.json
+Stage SC2: OUTLINE — 3 parallel agents (research + SEO + competitor)
+           Outputs: plan/state/content-research.json, content-seo.json, content-competitors.json
+           Merged: plan/state/content-outline.json
+Stage SC3: DRAFT — orchestrator writes full draft
+           Output: plan/docs/content-draft.md
+Stage SC4: CRITIQUE — 4-dimension scoring (clarity + originality + SEO + audience fit), threshold 75
+           Output: plan/state/content-critique.json
+Stage SC5: REFINE — (only if score < 75) revision loop, max 3 iterations
+           Output: plan/docs/content-draft.md (overwritten)
+Stage SC6: PUBLISH-READY — final assembly
+           Outputs: plan/docs/content-final.md, plan/docs/content-social.md
+```
+
+**Reference files:** Load in order:
+`references/content/phase-brief.md` → `phase-outline.md` → `phase-draft.md`
+→ `phase-critique.md` → `phase-refine.md` → `phase-publish-ready.md`
+Quality rubric: `references/content/quality-rubric.md`
+Output templates: `references/content/output-templates/`
+
+**Skipped entirely:** PRD, scaffold, worktree, architect, TDD, global DAG, milestone gates, git commits.
+
+**Dashboard cards:** brief · research · seo · competitor · draft · critique · refine (if needed) · output
+
+---
+
+### DAILY — fast productivity pipeline (< 60 seconds per task)
+
+```
+Stage 0:   mode detection → dashboard launch (minimal — 3 cards max)
+Stage SD1: PARSE — classify sub-mode, extract context from user message
+           Output: plan/state/daily-parse.json
+Stage SD2: EXECUTE — route to sub-mode handler (max 2 agents)
+           MEETING_PREP: context-agent + agenda-agent → plan/docs/daily-meeting-prep.md
+           EMAIL/DRAFT:  1 draft-agent → plan/docs/daily-email-drafts.md
+           EMAIL/TRIAGE: orchestrator direct → plan/docs/daily-email-triage.md
+           REVIEW:       orchestrator direct → plan/docs/daily-review.md
+           DECISION:     orchestrator direct → plan/docs/daily-decision.md
+           SOP:          orchestrator direct → plan/docs/daily-sop.md
+Stage SD3: DELIVER — print output file path to user; no further phases
+```
+
+**Reference files:** `references/daily/phase-parse.md` → `references/daily/sub-modes/{sub-mode}.md`
+Output templates: `references/daily/output-templates/`
+
+**Skipped entirely:** interview, PRD, scaffold, worktree, architect, TDD, global DAG, milestone gates, review, git commits.
+
+**Dashboard cards:** parse · execute (1–2 agent cards) · done
+
+---
 
 ### GREENFIELD — full pipeline
 
@@ -244,7 +474,7 @@ Set immediately after mode detection in Stage 0:
 
 ```json
 {
-  "mode": "greenfield | feature | surgical",
+  "mode": "greenfield | feature | surgical | marketing | research | strategy | content | daily",
   "mode_reason": "<why this mode was chosen — e.g. 'brownfield + error message in request'>",
   "detected_at": "{iso timestamp}"
 }
@@ -263,3 +493,8 @@ Phases not applicable to the current mode are skipped with a dashboard log entry
 | GREENFIELD | Full Build | Interview → PRD → scaffold → TDD → parallel impl → review |
 | FEATURE | Feature Addition | Survey → scoped plan → architect → TDD → parallel impl → review |
 | SURGICAL | Surgical Fix | Diagnose → systematic debug → targeted fix → scoped review |
+| MARKETING | Marketing Research | DISCOVER → RESEARCH (parallel) → SYNTHESISE → BRIEF → REVIEW |
+| RESEARCH | Deep Research | SCOPE → GATHER (parallel) → VALIDATE → SYNTHESISE → OUTPUT |
+| STRATEGY | Product Strategy | IDEATE → VALIDATE → DEFINE → GTM → HANDOFF |
+| CONTENT | Content Production | BRIEF → OUTLINE (parallel) → DRAFT → CRITIQUE → REFINE → PUBLISH-READY |
+| DAILY | Daily Productivity | PARSE → EXECUTE (1–2 agents) → DELIVER |
