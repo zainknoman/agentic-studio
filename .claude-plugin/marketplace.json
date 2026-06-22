@@ -1,9 +1,9 @@
 {
-  "name": "agentic-builder",
-  "owner": { "name": "Faisal Nauman" },
+  "name": "agentic-studio",
+  "owner": { "name": "Zain Kamali" },
   "plugins": [
     {
-      "name": "agentic-builder",
+      "name": "agentic-studio",
       "source": "./",
       "description": "Autonomous in-session SDLC orchestrator (global dependency-graph scheduler, TDD, two-stage review, live dashboard). No API key."
     }
